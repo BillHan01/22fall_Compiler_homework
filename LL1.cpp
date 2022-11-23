@@ -8,21 +8,21 @@
 
 using namespace std;
 
-/*²úÉúÊ½Àà*/
+/*äº§ç”Ÿå¼ç±»*/
 class Production
 {
 public:
-    Production(string str);  //×Ö·û´®µÄ¹¹Ôìº¯Êı
-    void Output();  //Àà³ÉÔ±º¯Êı£º²úÉúÊ½Êä³öº¯Êı
-    string left;  //Àà³ÉÔ±£º²úÉúÊ½×ó²à·ÇÖÕ½á·û
-    set<string> right;  //Àà³ÉÔ±£º²úÉúÊ½ÓÒ²àÖÕ½á·û¼¯
+    Production(string str);  //å­—ç¬¦ä¸²çš„æ„é€ å‡½æ•°
+    void Output();  //ç±»æˆå‘˜å‡½æ•°ï¼šäº§ç”Ÿå¼è¾“å‡ºå‡½æ•°
+    string left;  //ç±»æˆå‘˜ï¼šäº§ç”Ÿå¼å·¦ä¾§éç»ˆç»“ç¬¦
+    set<string> right;  //ç±»æˆå‘˜ï¼šäº§ç”Ÿå¼å³ä¾§ç»ˆç»“ç¬¦é›†
 };
 Production::Production(string str)
 {
     left = "";
     int len = str.length();
     int i;
-    /*É¨Ãè²úÉúÊ½×ó±ß£¬¸´ÖÆ½øleftÖĞ*/
+    /*æ‰«æäº§ç”Ÿå¼å·¦è¾¹ï¼Œå¤åˆ¶è¿›leftä¸­*/
     for (i = 0; i < len; i++)
     {
         if (str[i] == '-')
@@ -32,7 +32,9 @@ Production::Production(string str)
         }
         left += str[i];
     }
-    /*É¨Ãè²úÉúÊ½ÓÒ±ß£¬¸´ÖÆ½ørightÖĞ*/
+    if (!vn_dic[left])
+        vn_dic[left] = vn_set.size();       //ç´¢å¼•ä»1å¼€å§‹
+    /*æ‰«æäº§ç”Ÿå¼å³è¾¹ï¼Œå¤åˆ¶è¿›rightä¸­*/
     string tmp = "";
     while (i < len)
     {
@@ -41,7 +43,7 @@ Production::Production(string str)
             right.insert(tmp);
             tmp.clear();
         }
-        else if (str[i] == '~')          //~±íÊ¾¿Õ×Öepsilon
+        else if (str[i] == '~')          //~è¡¨ç¤ºç©ºå­—epsilon
             tmp = "~";
         else
             tmp += str[i];
@@ -63,14 +65,28 @@ void Production::Output()
 }
 
 
-vector<Production> vn_set;         //²úÉúÊ½£¨·ÇÖÕ½á·û£©¼¯ºÏ
-map<string, set<char>> first;     //firsr¼¯ºÏ
-map<string, set<char>> follow;    //follow¼¯ºÏ
+vector<Production> vn_set;         //äº§ç”Ÿå¼ï¼ˆéç»ˆç»“ç¬¦ï¼‰é›†åˆ
+map<string, int> vn_dic;           //éç»ˆç»“ç¬¦ç´¢å¼•
+map<string, set<char>> first;     //firsré›†åˆ
+map<string, set<char>> follow;    //followé›†åˆ
 int vn_is_visited[MAX_VALUE] = { 0 };
 
+
+/*æ¯æ¬¡åˆ†æå‰ï¼Œæ¸…ç©ºæ‰€æœ‰å®¹å™¨ä¸­çš„å˜é‡*/
+void cleanData()
+{
+    vn_set.clear();
+    vn_dic.clear();
+    first.clear();
+    follow.clear();
+    memset(vn_is_visited, 0, sizeof(vn_is_visited));
+}
+
+
+/*æ·±åº¦ä¼˜å…ˆéå†æ„é€ FIRST*/
 void DFS(int i)
 {
-    if (vn_is_visited[i] == 1)   //ÒÑ¾­·ÃÎÊ 
+    if (vn_is_visited[i] == 1)   //å·²ç»è®¿é—® 
         return;
     vn_is_visited[i] = 1;
 
@@ -80,98 +96,67 @@ void DFS(int i)
     for(;iter != right.end();iter++)
         for (int j = 0; j < iter->length(); j++)
         {
-            if (!isupper(iter->at(j)) && iter->at(j) != '\'') //Èôµ±Ç°²»Ö¸Ïò·ÇÖÕ½á·û
+            if (!isupper(iter->at(j)) && iter->at(j) != '\'') //è‹¥å½“å‰ä¸æŒ‡å‘éç»ˆç»“ç¬¦
             {
                 first[left].insert(iter->at(j));
                 break;
             }
-            if (isupper(iter->at(j)))  //Èôµ±Ç°Ö¸Ïò·ÇÖÕ½á·û
+            if (isupper(iter->at(j)))  //è‹¥å½“å‰æŒ‡å‘éç»ˆç»“ç¬¦
             {
                 int k;
-                if(j!=iter->length()-1&&iter->at(j+1)=='\'')
-                    
-            }
-        }
+                if (j != iter->length() - 1 && iter->at(j + 1) == '\'')  //è¿™é‡Œæ²¡å¤ªçœ‹æ‡‚ã€‚ã€‚ã€‚ã€‚ã€‚ã€‚ã€‚ã€‚ã€‚ã€‚ã€‚ã€‚
+                    k = vn_dic[iter->substr(j, 2)] - 1;
+                else
+                    k = vn_dic[iter->substr(j, 1)] - 1;
+                string& left_t = vn_set[k].left;
 
-    for (; it != right.end(); it++)
-        for (int i = 0; i < it->length(); i++)
-        {
-            if (!isupper(it->at(i)) && it->at(i) != '\'')
-            {
-                first[left].insert(it->at(i));
-                break;
-            }
-            if (isupper(it->at(i)))
-            {
-                int y;
-                if (i != it->length() - 1 && it->at(i + 1) == '\'')
-                    y = VN_dic[it->substr(i, 2)] - 1;
-                else y = VN_dic[it->substr(i, 1)] - 1;
-                string& tleft = VN_set[y].left;
-                dfs(y);
-                set<char>& temp = first[tleft];
-                set<char>::iterator it1 = temp.begin();
+                DFS(k);
+
+                set<char>& tmp = first[left_t];
+                set<char>::iterator iter_1 = tmp.begin();
                 bool flag = true;
-                for (; it1 != temp.end(); it1++)
+                for (; iter_1 != tmp.end(); iter_1++)
                 {
-                    if (*it1 == '~') flag = false;
-                    first[left].insert(*it1);
+                    if (*iter_1 == '~') 
+                        flag = false;
+                    first[left].insert(*iter_1);
                 }
-                if (flag) break;
+                if (flag == true)
+                    break;
             }
-            else continue;
+            else
+                continue;
         }
 }
 
+
+
+/*æ„é€ å¹¶è¾“å‡ºFIRSTé›†åˆåŠŸèƒ½å‡½æ•°*/
 void makeFirst()
 {
-
+    
 }
 
-void make_first()
-{
-    memset(used, 0, sizeof(used));
-    for (int i = 0; i < VN_set.size(); i++)
-        dfs(i);
-#define DEBUG
-#ifdef DEBUG
-    puts("***************FIRST¼¯***********************");
-    map<string, set<char> >::iterator it = first.begin();
-    for (; it != first.end(); it++)
-    {
-        printf("FIRST(%s)={", it->first.c_str());
-        set<char>& temp = it->second;
-        set<char>::iterator it1 = temp.begin();
-        bool flag = false;
-        for (; it1 != temp.end(); it1++)
-        {
-            if (flag) printf(",");
-            printf("%c", *it1);
-            flag = true;
-        }
-        puts("}");
-    }
-#endif
-}
 
 
 int main()
 {
     cout << "==========================================" << endl;
-    cout << "==== Í¬¼Ã´óÑ§2022ÄêÇï±àÒëÔ­Àí¿Î³Ì×÷Òµ ====" << endl;
-    cout << "====        LL(1)Óï·¨·ÖÎö³ÌĞò         ====" << endl;
+    cout << "==== åŒæµå¤§å­¦2022å¹´ç§‹ç¼–è¯‘åŸç†è¯¾ç¨‹ä½œä¸š ====" << endl;
+    cout << "====        LL(1)è¯­æ³•åˆ†æç¨‹åº         ====" << endl;
     cout << "====            Welcome!              ====" << endl;
     cout << "==========================================" << endl;
     cout << endl;
 
     while (1)
     {
+        cleanData();
         int n;
-        cout << "ÇëÊäÈëLL(1)ÎÄ·¨²úÉúÊ½µÄÊıÁ¿£¨ÊäÈë·ÇÕıÊıÍË³ö³ÌĞò£©£º";
+        cout << "è¯·è¾“å…¥LL(1)æ–‡æ³•äº§ç”Ÿå¼çš„æ•°é‡ï¼ˆè¾“å…¥éæ­£æ•°é€€å‡ºç¨‹åºï¼‰ï¼š";
         cin >> n;
         if (n <= 0)
             break;
-        /*ÊäÈën¸öÎÄ·¨²úÉúÊ½*/
+        /*è¾“å…¥nä¸ªæ–‡æ³•äº§ç”Ÿå¼*/
         string str;
         for (int i = 0; i < n; i++)
         {

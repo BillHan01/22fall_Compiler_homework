@@ -8,21 +8,21 @@
 
 using namespace std;
 
-/*äº§ç”Ÿå¼ç±»*/
+/*²úÉúÊ½Àà*/
 class Production
 {
 public:
-    Production(string str);  //å­—ç¬¦ä¸²çš„æ„é€ å‡½æ•°
-    void Output();  //ç±»æˆå‘˜å‡½æ•°ï¼šäº§ç”Ÿå¼è¾“å‡ºå‡½æ•°
-    string left;  //ç±»æˆå‘˜ï¼šäº§ç”Ÿå¼å·¦ä¾§éç»ˆç»“ç¬¦
-    set<string> right;  //ç±»æˆå‘˜ï¼šäº§ç”Ÿå¼å³ä¾§ç»ˆç»“ç¬¦é›†
+    Production(string str);  //×Ö·û´®µÄ¹¹Ôìº¯Êı
+    void Output();  //Àà³ÉÔ±º¯Êı£º²úÉúÊ½Êä³öº¯Êı
+    string left;  //Àà³ÉÔ±£º²úÉúÊ½×ó²à·ÇÖÕ½á·û
+    set<string> right;  //Àà³ÉÔ±£º²úÉúÊ½ÓÒ²àÖÕ½á·û¼¯
 };
 Production::Production(string str)
 {
     left = "";
     int len = str.length();
     int i;
-    /*æ‰«æäº§ç”Ÿå¼å·¦è¾¹ï¼Œå¤åˆ¶è¿›leftä¸­*/
+    /*É¨Ãè²úÉúÊ½×ó±ß£¬¸´ÖÆ½øleftÖĞ*/
     for (i = 0; i < len; i++)
     {
         if (str[i] == '-')
@@ -32,7 +32,7 @@ Production::Production(string str)
         }
         left += str[i];
     }
-    /*æ‰«æäº§ç”Ÿå¼å³è¾¹ï¼Œå¤åˆ¶è¿›rightä¸­*/
+    /*É¨Ãè²úÉúÊ½ÓÒ±ß£¬¸´ÖÆ½ørightÖĞ*/
     string tmp = "";
     while (i < len)
     {
@@ -41,7 +41,7 @@ Production::Production(string str)
             right.insert(tmp);
             tmp.clear();
         }
-        else if (str[i] == '~')          //~è¡¨ç¤ºç©ºå­—epsilon
+        else if (str[i] == '~')          //~±íÊ¾¿Õ×Öepsilon
             tmp = "~";
         else
             tmp += str[i];
@@ -49,7 +49,7 @@ Production::Production(string str)
     }
     right.insert(tmp);
 }
-void Production::Output()  
+void Production::Output()
 {
     cout << left << "->";
     set<string>::iterator iter = right.begin();
@@ -63,13 +63,13 @@ void Production::Output()
 }
 
 
-vector<Production> vn_set;         //äº§ç”Ÿå¼ï¼ˆéç»ˆç»“ç¬¦ï¼‰é›†åˆ
-map<string, int> vn_dic;           //éç»ˆç»“ç¬¦ç´¢å¼•
-map<string, set<char>> first;     //firsré›†åˆ
-map<string, set<char>> follow;    //followé›†åˆ
+vector<Production> vn_set;         //²úÉúÊ½£¨·ÇÖÕ½á·û£©¼¯ºÏ
+map<string, int> vn_dic;           //·ÇÖÕ½á·ûË÷Òı
+map<string, set<char>> first;     //firsr¼¯ºÏ
+map<string, set<char>> follow;    //follow¼¯ºÏ
 int vn_is_visited[MAX_VALUE] = { 0 };
 
-/*æ¯æ¬¡åˆ†æå‰ï¼Œæ¸…ç©ºæ‰€æœ‰å®¹å™¨ä¸­çš„å˜é‡*/
+/*Ã¿´Î·ÖÎöÇ°£¬Çå¿ÕËùÓĞÈİÆ÷ÖĞµÄ±äÁ¿*/
 void cleanData()
 {
     vn_set.clear();
@@ -79,7 +79,7 @@ void cleanData()
     memset(vn_is_visited, 0, sizeof(vn_is_visited));
 }
 
-/*åˆå§‹åŒ–visitæ ‡å¿—æ•°ç»„*/
+/*³õÊ¼»¯visit±êÖ¾Êı×é*/
 void initVisit(vector<Production>& vn_set)
 {
     string left;
@@ -87,32 +87,32 @@ void initVisit(vector<Production>& vn_set)
     {
         left = vn_set[i].left;
         if (!vn_dic[left])
-            vn_dic[left] = i + 1;       //ç´¢å¼•ä»1å¼€å§‹
+            vn_dic[left] = i + 1;       //Ë÷Òı´Ó1¿ªÊ¼
     }
 }
 
-/*æ·±åº¦ä¼˜å…ˆéå†æ„é€ FIRST*/
+/*Éî¶ÈÓÅÏÈ±éÀú¹¹ÔìFIRST*/
 void DFS(int i)
 {
-    if (vn_is_visited[i] == 1)   //å·²ç»è®¿é—® 
+    if (vn_is_visited[i] == 1)   //ÒÑ¾­·ÃÎÊ 
         return;
     vn_is_visited[i] = 1;
 
     string& left = vn_set[i].left;
     set<string>& right = vn_set[i].right;
     set<string>::iterator iter = right.begin();
-    for(;iter != right.end();iter++)
+    for (; iter != right.end(); iter++)
         for (int j = 0; j < iter->length(); j++)
         {
-            if (!isupper(iter->at(j)) && iter->at(j) != '\'') //è‹¥å½“å‰ä¸æŒ‡å‘éç»ˆç»“ç¬¦
+            if (!isupper(iter->at(j)) && iter->at(j) != '\'') //Èôµ±Ç°²»Ö¸Ïò·ÇÖÕ½á·û
             {
                 first[left].insert(iter->at(j));
                 break;
             }
-            if (isupper(iter->at(j)))  //è‹¥å½“å‰æŒ‡å‘éç»ˆç»“ç¬¦
+            if (isupper(iter->at(j)))  //Èôµ±Ç°Ö¸Ïò·ÇÖÕ½á·û
             {
                 int k;
-                if (j != iter->length() - 1 && iter->at(j + 1) == '\'')  //è€ƒè™‘éç»ˆç»“ç¬¦å½¢å¼ä¸º P'
+                if (j != iter->length() - 1 && iter->at(j + 1) == '\'')  //¿¼ÂÇ·ÇÖÕ½á·ûĞÎÊ½Îª P'
                     k = vn_dic[iter->substr(j, 2)] - 1;
                 else
                     k = vn_dic[iter->substr(j, 1)] - 1;
@@ -125,7 +125,7 @@ void DFS(int i)
                 bool flag = true;
                 for (; iter_1 != tmp.end(); iter_1++)
                 {
-                    if (*iter_1 == '~') 
+                    if (*iter_1 == '~')
                         flag = false;
                     first[left].insert(*iter_1);
                 }
@@ -137,7 +137,7 @@ void DFS(int i)
         }
 }
 
-/*æ„é€ å¹¶è¾“å‡ºFIRSTé›†åˆåŠŸèƒ½å‡½æ•°*/
+/*¹¹Ôì²¢Êä³öFIRST¼¯ºÏ¹¦ÄÜº¯Êı*/
 void makeFirst()
 {
     for (int i = 0; i < vn_set.size(); i++)
@@ -164,7 +164,7 @@ void makeFirst()
     cout << endl;
 }
 
-/*æ„é€ FOLLOWé›†åˆè¿‡ç¨‹ä¸­ï¼Œå°†str1çš„FOLLOWå…ƒç´ åŠ åˆ°str2ä¸­*/
+/*¹¹ÔìFOLLOW¼¯ºÏ¹ı³ÌÖĞ£¬½«str1µÄFOLLOWÔªËØ¼Óµ½str2ÖĞ*/
 void append(const string& str1, const string& str2)
 {
     set<char>& s1 = follow[str1];
@@ -174,7 +174,7 @@ void append(const string& str1, const string& str2)
         s2.insert(*iter);
 }
 
-/*æ„é€ å¹¶è¾“å‡ºFOLLOWé›†åˆåŠŸèƒ½å‡½æ•°*/
+/*¹¹Ôì²¢Êä³öFOLLOW¼¯ºÏ¹¦ÄÜº¯Êı*/
 void makeFollow()
 {
     while (1)
@@ -199,13 +199,13 @@ void makeFollow()
                             int tt = follow[iter->substr(j - 1, 2)].size();
                             append(left, iter->substr(j - 1, 2));
                             int tt1 = follow[iter->substr(j - 1, 2)].size();
-                            if (tt1 > tt) 
+                            if (tt1 > tt)
                                 goon = true;
                             if (!vn_set[index].right.count("~"))
                                 flag = false;
                         }
 
-                        
+
                         for (int k = j + 1; k < iter->length(); k++)
                         {
                             if (isupper(str[k]))
@@ -249,7 +249,7 @@ void makeFollow()
                             if (!vn_set[x].right.count("~"))
                                 flag = false;
                             int tt1 = follow[iter->substr(j, 1)].size();
-                            if (tt1 > tt) 
+                            if (tt1 > tt)
                                 goon = true;
                         }
                         for (int k = j + 1; k < iter->length(); k++)
@@ -277,7 +277,7 @@ void makeFollow()
                                 int tt = follow[iter->substr(j, 1)].size();
                                 follow[iter->substr(j, 1)].insert(str[k]);
                                 int tt1 = follow[iter->substr(j, 1)].size();
-                                if (tt1 > tt) 
+                                if (tt1 > tt)
                                     goon = true;
                                 break;
                             }
@@ -319,8 +319,8 @@ void makeFollow()
 int main()
 {
     cout << "==========================================" << endl;
-    cout << "==== åŒæµå¤§å­¦2022å¹´ç§‹ç¼–è¯‘åŸç†è¯¾ç¨‹ä½œä¸š ====" << endl;
-    cout << "====        LL(1)è¯­æ³•åˆ†æç¨‹åº         ====" << endl;
+    cout << "==== Í¬¼Ã´óÑ§2022ÄêÇï±àÒëÔ­Àí¿Î³Ì×÷Òµ ====" << endl;
+    cout << "====        LL(1)Óï·¨·ÖÎö³ÌĞò         ====" << endl;
     cout << "====            Welcome!              ====" << endl;
     cout << "==========================================" << endl;
     cout << endl;
@@ -329,11 +329,11 @@ int main()
     {
         cleanData();
         int n;
-        cout << "è¯·è¾“å…¥LL(1)æ–‡æ³•äº§ç”Ÿå¼çš„æ•°é‡ï¼ˆè¾“å…¥éæ­£æ•°é€€å‡ºç¨‹åºï¼‰ï¼š";
+        cout << "ÇëÊäÈëLL(1)ÎÄ·¨²úÉúÊ½µÄÊıÁ¿£¨ÊäÈë·ÇÕıÊıÍË³ö³ÌĞò£©£º";
         cin >> n;
         if (n <= 0)
             break;
-        /*è¾“å…¥nä¸ªæ–‡æ³•äº§ç”Ÿå¼*/
+        /*ÊäÈën¸öÎÄ·¨²úÉúÊ½*/
         string str;
         for (int i = 0; i < n; i++)
         {

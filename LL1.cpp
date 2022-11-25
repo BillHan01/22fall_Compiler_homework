@@ -49,7 +49,7 @@ Production::Production(string str)
     }
     right.insert(tmp);
 }
-void Production::Output()
+void Production::Output()  
 {
     cout << left << "->";
     set<string>::iterator iter = right.begin();
@@ -68,6 +68,8 @@ map<string, int> vn_dic;           //非终结符索引
 map<string, set<char>> first;     //firsr集合
 map<string, set<char>> follow;    //follow集合
 int vn_is_visited[MAX_VALUE] = { 0 };
+vector<map<char, string>> table;  //LL(1)分析表
+
 
 /*每次分析前，清空所有容器中的变量*/
 void cleanData()
@@ -101,7 +103,7 @@ void DFS(int i)
     string& left = vn_set[i].left;
     set<string>& right = vn_set[i].right;
     set<string>::iterator iter = right.begin();
-    for (; iter != right.end(); iter++)
+    for(;iter != right.end();iter++)
         for (int j = 0; j < iter->length(); j++)
         {
             if (!isupper(iter->at(j)) && iter->at(j) != '\'') //若当前不指向非终结符
@@ -125,7 +127,7 @@ void DFS(int i)
                 bool flag = true;
                 for (; iter_1 != tmp.end(); iter_1++)
                 {
-                    if (*iter_1 == '~')
+                    if (*iter_1 == '~') 
                         flag = false;
                     first[left].insert(*iter_1);
                 }
@@ -199,13 +201,13 @@ void makeFollow()
                             int tt = follow[iter->substr(j - 1, 2)].size();
                             append(left, iter->substr(j - 1, 2));
                             int tt1 = follow[iter->substr(j - 1, 2)].size();
-                            if (tt1 > tt)
+                            if (tt1 > tt) 
                                 goon = true;
                             if (!vn_set[index].right.count("~"))
                                 flag = false;
                         }
 
-
+                        
                         for (int k = j + 1; k < iter->length(); k++)
                         {
                             if (isupper(str[k]))
@@ -249,7 +251,7 @@ void makeFollow()
                             if (!vn_set[x].right.count("~"))
                                 flag = false;
                             int tt1 = follow[iter->substr(j, 1)].size();
-                            if (tt1 > tt)
+                            if (tt1 > tt) 
                                 goon = true;
                         }
                         for (int k = j + 1; k < iter->length(); k++)
@@ -277,7 +279,7 @@ void makeFollow()
                                 int tt = follow[iter->substr(j, 1)].size();
                                 follow[iter->substr(j, 1)].insert(str[k]);
                                 int tt1 = follow[iter->substr(j, 1)].size();
-                                if (tt1 > tt)
+                                if (tt1 > tt) 
                                     goon = true;
                                 break;
                             }
@@ -315,6 +317,123 @@ void makeFollow()
 }
 
 
+/*检查字符是否属于字符串的FIRST集合*/
+int belongToFirst(char ch, const string& str)
+{
+    for (int i = 0; i < str.length(); i++)
+    {
+        int containEpsilon = 0; //是否包含空字
+        if (!isupper(str[i]) && str[i] != '\'')
+        {
+            //为终结符，除非该终结符为ch，否则返回0
+            if (str[i] == ch)
+                return 1;
+            else
+                return 0;
+        }
+        else if (isupper(str[i]))
+        {
+            string tmp;
+            if (i != str.length() - 1 && str[i + 1] == '\'')
+                tmp = str.substr(i, 2);       //处理诸如 P' 的非终结符
+            else
+                tmp = str.substr(i, 1);       //一般的非终结符
+            set<char>::iterator iter = first[tmp].begin(); //遍历非终结符FIRST集
+            for (; iter != first[tmp].end(); iter++)
+            {
+                if (*iter == '~')
+                    containEpsilon = 1;
+                if (*iter == ch)
+                    return 1;
+            }
+            if (!containEpsilon)
+                break;           //不含有空字，则不可能再找到，退出循环
+        }
+    }
+    return 0;
+}
+
+/*检查字符是否属于字符串的FOLLOW集合*/
+int belongToFollow(char ch, const string& str)
+{
+    set<char>::iterator iter = follow[str].begin();
+    for (; iter != follow[str].end(); iter++)
+    {
+        if (*iter == ch)
+            return 1;
+    }
+    return 0;
+}
+
+void createTable()
+{
+    map<char, string> tmp; //单个非终结符对应的一行表
+    vector<char> letter;
+    bool is_visited[1001] = {};
+    for (int i = 0; i < vn_set.size(); i++)
+    {
+        set<string>& right = vn_set[i].right;
+        set<string>::iterator iter = right.begin();
+        for (; iter != right.end(); iter++)
+            for (int j = 0; j < iter->length(); j++)
+                if (!isupper(iter->at(j)) && iter->at(j) != '\'')
+                {
+                    if (is_visited[iter->at(j)]) 
+                        continue;
+                    is_visited[iter->at(j)] = true;
+                    letter.push_back(iter->at(j));
+                }
+    }
+    for (int i = 0; i < vn_set.size(); i++)
+    {
+        tmp.clear();
+        string& left = vn_set[i].left;
+        set<string>& right = vn_set[i].right;
+        set<string>::iterator it = right.begin();
+        for (; it != right.end(); it++)
+            for (int j = 0; j < letter.size(); j++)
+            {
+                //cout << *it << " " <<  letter[j] << endl;
+                if (belongToFirst(letter[j], *it))
+                    tmp[letter[j]] = *it;
+                
+                if (it->at(0) == '~' && belongToFollow(letter[j],left))
+                    tmp[letter[j]] = *it;
+            }
+        table.push_back(tmp);
+    }
+
+    /*打印LL(1)分析表*/
+    cout << endl;
+    cout << "**************** LL1 Analysis Table ****************" << endl;
+    for (int i = 0; i < (letter.size() + 1) * 10; i++)
+        cout << "-";
+    cout << endl;
+    cout << "|        |";
+    for (int i = 0; i < letter.size(); i++)
+        cout << "    " << letter[i] << "    |";
+    cout << endl;
+    for (int i = 0; i < (letter.size() + 1) * 10; i++)
+        cout << "-";
+    cout << endl;
+    for (int i = 0; i < vn_set.size(); i++)
+    {
+        printf("|%5s%4s", vn_set[i].left.c_str(), "|");
+        for (int j = 0; j < letter.size(); j++)
+        {
+            if (table[i].count(letter[j]))
+                printf("%7s%3s", table[i][letter[j]].c_str(), "|");
+            else
+                cout << "         |";
+        }
+        cout << endl;
+        for (int i = 0; i < (letter.size() + 1) * 10; i++)
+            cout << "-";
+        cout << endl;
+    }
+    cout << endl;
+}
+
 
 int main()
 {
@@ -344,6 +463,8 @@ int main()
         initVisit(vn_set);
         makeFirst();
         makeFollow();
+        createTable();
     }
     return 0;
 }
+

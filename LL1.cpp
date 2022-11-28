@@ -463,14 +463,14 @@ void createTable()
 void String_trennen(string vn)
 {
     string new_vn(vn.rbegin(), vn.rend());   //倒序判断
-    string::iterator p = new_vn.begin();
+    string::iterator p = vn.begin();
     
-    while (p != new_vn.end())
+    while (p != vn.end())
     {
-        if (*p  == '\'')     //特判'的情况
+        if (*(p + 1) == '\'')
         {
-            string temp(1, *(p + 1));
-            temp += *(p);
+            string temp(1, *p);
+            temp += *(p + 1);
             LL1_Stack.push(temp);
             p += 2;
             continue;
@@ -485,30 +485,6 @@ void String_trennen(string vn)
     }
     return;
 }
-void vt_initialisieren()
-{
-    for (int i = 0; i < vt_set.size(); i++)
-    {
-        vt.insert(string(1, vt_set[i]));
-    }
-}
-void Stack_Output()
-{
-    stack<string> LL1_copy = LL1_Stack;
-    stack<string> LL1_Output;
-    while (!LL1_copy.empty())
-    {
-        LL1_Output.push(LL1_copy.top());
-        LL1_copy.pop();
-    }
-    while (!LL1_Output.empty())
-    {
-        cout << LL1_Output.top();
-        LL1_Output.pop();
-    }
-    cout << endl;
-    return;
-}
 //输入LL(1)文法进行语法分析
 void LL1_analysieren()    
 {
@@ -517,21 +493,18 @@ void LL1_analysieren()
 
     cin >> Next_LL1;
     Next_LL1 += "#";        //添加#
-    Next_LL1 += '\0';
     LL1_Stack.push("#");    //加入#
-    LL1_Stack.push(vn_set[0].left);   //加入首个非终结符
-    vt_initialisieren();
+    LL1_Stack.push(vn_set[1].left);   //加入首个非终结符
     string::iterator p = Next_LL1.begin();
     while (p != Next_LL1.end())
     {
         string X = LL1_Stack.top();   //取栈顶元素
-        if (vt.find(X) != vt.end() && X != "#")    //X为终结符且不为#
+        if (vt.find(X) != vt.end())    //X为终结符
         {
             if (string(1, *p) == X) //匹配成功
             {
                 p++;
                 LL1_Stack.pop();    //指针后移，且栈顶元素出栈
-                Stack_Output();
                 continue;
             }
             else                       //栈顶终结符与指针终结符不同，报错
@@ -555,24 +528,16 @@ void LL1_analysieren()
         }
         else if (table[X][*p]!="")   //X为非终结符，找表格
         {
-            if (table[X][*p] == "~") //空字特判
-            {
-                LL1_Stack.pop();
-                Stack_Output();
-                continue;
-            }
             LL1_Stack.pop();    
             String_trennen(table[X][*p]);  //表格内产生式右侧进栈
-            Stack_Output();
             continue;
-        }     
+        }
         else if (table[X][*p] == "")
         {
             cout << "ERROR!" << endl;
             return;
         }
     }
-    return;
 }
 int main()
 {

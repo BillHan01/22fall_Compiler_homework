@@ -484,6 +484,7 @@ void String_trennen(string vn)
     }
     return;
 }
+
 void vt_initialisieren()
 {
     for (int i = 0; i < vt_set.size(); i++)
@@ -491,6 +492,7 @@ void vt_initialisieren()
         vt.insert(string(1, vt_set[i]));
     }
 }
+
 void Stack_Output()
 {
     stack<string> LL1_copy = LL1_Stack;
@@ -508,6 +510,8 @@ void Stack_Output()
     cout << endl;
     return;
 }
+
+
 //输入LL(1)文法进行语法分析
 void LL1_analysieren()    
 {
@@ -573,6 +577,7 @@ void LL1_analysieren()
     }
     return;
 }
+
 int main()
 {
     cout << "==========================================" << endl;

@@ -603,6 +603,7 @@ int main()
         createFollow();
         createTable();
         LL1_analysieren();
+        cout << "???test" << endl;
     }
     return 0;
 }

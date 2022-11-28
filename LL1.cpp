@@ -1,3 +1,4 @@
+/*LL(1) 语法分析器生成程序*/
 #define MAX_VALUE 1001
 
 #include <iostream>

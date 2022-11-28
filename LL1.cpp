@@ -63,12 +63,16 @@ void Production::Output()
 }
 
 
+/*定义全局变量*/
 vector<Production> vn_set;         //产生式（非终结符）集合
 map<string, int> vn_dic;           //非终结符索引
 map<string, set<char>> first;     //firsr集合
 map<string, set<char>> follow;    //follow集合
 int vn_is_visited[MAX_VALUE] = { 0 };
-vector<map<char, string>> table;  //LL(1)分析表
+//vector<map<char, string>> table;  //LL(1)分析表
+map<string, map<char, string>> table;  //LL(1)分析表
+//vector<char> letter;        //存储终结符
+vector<char> vt_set;              //终结符集合
 
 
 /*每次分析前，清空所有容器中的变量*/
@@ -140,7 +144,7 @@ void DFS(int i)
 }
 
 /*构造并输出FIRST集合功能函数*/
-void makeFirst()
+void createFirst()
 {
     for (int i = 0; i < vn_set.size(); i++)
         DFS(i);
@@ -177,7 +181,7 @@ void append(const string& str1, const string& str2)
 }
 
 /*构造并输出FOLLOW集合功能函数*/
-void makeFollow()
+void createFollow()
 {
     while (1)
     {
@@ -368,22 +372,34 @@ int belongToFollow(char ch, const string& str)
 void createTable()
 {
     map<char, string> tmp; //单个非终结符对应的一行表
-    vector<char> letter;
-    bool is_visited[1001] = {};
+
+    /*构造终结符集合vn_set*/
+    bool is_visited[1001] = {};  
     for (int i = 0; i < vn_set.size(); i++)
     {
         set<string>& right = vn_set[i].right;
         set<string>::iterator iter = right.begin();
         for (; iter != right.end(); iter++)
             for (int j = 0; j < iter->length(); j++)
+                if (!isupper(iter->at(j)) && iter->at(j) != '\'' && iter->at(j) != '~')
+                {
+                    if (is_visited[iter->at(j)])
+                        continue;   //已经在集合中
+                    is_visited[iter->at(j)] = true;
+                    vt_set.push_back(iter->at(j));  //加入终结符集合
+                }
+                /*
                 if (!isupper(iter->at(j)) && iter->at(j) != '\'')
                 {
                     if (is_visited[iter->at(j)]) 
                         continue;
                     is_visited[iter->at(j)] = true;
-                    letter.push_back(iter->at(j));
-                }
+                    vt_set.push_back(iter->at(j));
+                }*/
     }
+    vt_set.push_back('#');  //把结束标志#加到终结符集合中
+
+    /*构造LL(1)分析表主过程*/
     for (int i = 0; i < vn_set.size(); i++)
     {
         tmp.clear();
@@ -391,43 +407,46 @@ void createTable()
         set<string>& right = vn_set[i].right;
         set<string>::iterator it = right.begin();
         for (; it != right.end(); it++)
-            for (int j = 0; j < letter.size(); j++)
+            for (int j = 0; j < vt_set.size(); j++)
             {
-                //cout << *it << " " <<  letter[j] << endl;
-                if (belongToFirst(letter[j], *it))
-                    tmp[letter[j]] = *it;
+                //cout << *it << " " <<  vt_set[j] << endl;
+                if (belongToFirst(vt_set[j], *it))
+                    tmp[vt_set[j]] = *it;             //对 P->α，若a属于FIRST(α)，则置[P,a]为α
                 
-                if (it->at(0) == '~' && belongToFollow(letter[j],left))
-                    tmp[letter[j]] = *it;
+                if (it->at(0) == '~' && belongToFollow(vt_set[j],left))
+                    tmp[vt_set[j]] = *it;        //若b属于FOLLOW(P)，置[P,b]为空字
             }
-        table.push_back(tmp);
+        //table.push_back(tmp);
+        table[vn_set[i].left] = tmp;  //完成该非终结符对应行的构造
     }
 
     /*打印LL(1)分析表*/
     cout << endl;
     cout << "**************** LL1 Analysis Table ****************" << endl;
-    for (int i = 0; i < (letter.size() + 1) * 10; i++)
+    for (int i = 0; i < (vt_set.size() + 1) * 10; i++)
         cout << "-";
     cout << endl;
     cout << "|        |";
-    for (int i = 0; i < letter.size(); i++)
-        cout << "    " << letter[i] << "    |";
+    for (int i = 0; i < vt_set.size(); i++)
+        cout << "    " << vt_set[i] << "    |";
     cout << endl;
-    for (int i = 0; i < (letter.size() + 1) * 10; i++)
+    for (int i = 0; i < (vt_set.size() + 1) * 10; i++)
         cout << "-";
     cout << endl;
     for (int i = 0; i < vn_set.size(); i++)
     {
         printf("|%5s%4s", vn_set[i].left.c_str(), "|");
-        for (int j = 0; j < letter.size(); j++)
+        for (int j = 0; j < vt_set.size(); j++)
         {
-            if (table[i].count(letter[j]))
-                printf("%7s%3s", table[i][letter[j]].c_str(), "|");
+            //if (table[i].count(vt_set[j]))
+              //  printf("%7s%3s", table[i][vt_set[j]].c_str(), "|");
+            if(table[vn_set[i].left].count(vt_set[j]))
+                printf("%7s%3s", table[vn_set[i].left][vt_set[j]].c_str(), "|");
             else
                 cout << "         |";
         }
         cout << endl;
-        for (int i = 0; i < (letter.size() + 1) * 10; i++)
+        for (int i = 0; i < (vt_set.size() + 1) * 10; i++)
             cout << "-";
         cout << endl;
     }
@@ -461,8 +480,8 @@ int main()
             vn_set.push_back(pro);
         }
         initVisit(vn_set);
-        makeFirst();
-        makeFollow();
+        createFirst();
+        createFollow();
         createTable();
     }
     return 0;

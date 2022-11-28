@@ -75,16 +75,17 @@ map<string, map<char, string>> table;  //LL(1)分析表
 vector<char> vt_set;              //终结符集合
 stack<string> LL1_Stack;
 
-
 /*每次分析前，清空所有容器中的变量*/
 void cleanData()
 {
-   
     vn_set.clear();
     vn_dic.clear();
     first.clear();
     follow.clear();
     memset(vn_is_visited, 0, sizeof(vn_is_visited));
+    table.clear();
+    vt_set.clear();
+    start.clear();
 }
 
 /*初始化visit标志数组*/

@@ -5,7 +5,8 @@
 #include <set>
 #include <vector>
 #include <map>
-
+#include<stack>
+#include<algorithm>
 using namespace std;
 
 /*产生式类*/
@@ -68,16 +69,17 @@ vector<Production> vn_set;         //产生式（非终结符）集合
 map<string, int> vn_dic;           //非终结符索引
 map<string, set<char>> first;     //firsr集合
 map<string, set<char>> follow;    //follow集合
+set<string> vt;
 int vn_is_visited[MAX_VALUE] = { 0 };
-//vector<map<char, string>> table;  //LL(1)分析表
 map<string, map<char, string>> table;  //LL(1)分析表
-//vector<char> letter;        //存储终结符
 vector<char> vt_set;              //终结符集合
+stack<string> LL1_Stack;
 
 
 /*每次分析前，清空所有容器中的变量*/
 void cleanData()
 {
+   
     vn_set.clear();
     vn_dic.clear();
     first.clear();
@@ -412,12 +414,14 @@ void createTable()
                 //cout << *it << " " <<  vt_set[j] << endl;
                 if (belongToFirst(vt_set[j], *it))
                     tmp[vt_set[j]] = *it;             //对 P->α，若a属于FIRST(α)，则置[P,a]为α
-                
-                if (it->at(0) == '~' && belongToFollow(vt_set[j],left))
+
+                if (it->at(0) == '~' && belongToFollow(vt_set[j], left))
                     tmp[vt_set[j]] = *it;        //若b属于FOLLOW(P)，置[P,b]为空字
             }
-        //table.push_back(tmp);
-        table[vn_set[i].left] = tmp;  //完成该非终结符对应行的构造
+        
+            //table.push_back(tmp);
+            table[vn_set[i].left] = tmp;  //完成该非终结符对应行的构造
+
     }
 
     /*打印LL(1)分析表*/
@@ -438,9 +442,10 @@ void createTable()
         printf("|%5s%4s", vn_set[i].left.c_str(), "|");
         for (int j = 0; j < vt_set.size(); j++)
         {
+
             //if (table[i].count(vt_set[j]))
               //  printf("%7s%3s", table[i][vt_set[j]].c_str(), "|");
-            if(table[vn_set[i].left].count(vt_set[j]))
+            if (table[vn_set[i].left].count(vt_set[j]))
                 printf("%7s%3s", table[vn_set[i].left][vt_set[j]].c_str(), "|");
             else
                 cout << "         |";
@@ -453,7 +458,86 @@ void createTable()
     cout << endl;
 }
 
+/*对产生式右边进行处理*/
+void String_trennen(string vn)
+{
+    string new_vn(vn.rbegin(), vn.rend());   //倒序判断
+    string::iterator p = vn.begin();
+    
+    while (p != vn.end())
+    {
+        if (*(p + 1) == '\'')
+        {
+            string temp(1, *p);
+            temp += *(p + 1);
+            LL1_Stack.push(temp);
+            p += 2;
+            continue;
+        }
+        else
+        {
+            string temp(1, *p);
+            LL1_Stack.push(temp);
+            p++;
+            continue;
+        }
+    }
+    return;
+}
+//输入LL(1)文法进行语法分析
+void LL1_analysieren()    
+{
+    cout << "请输入LL(1)文法：" << endl;
+    string Next_LL1;    //即将输入的LL(1)文法
 
+    cin >> Next_LL1;
+    Next_LL1 += "#";        //添加#
+    LL1_Stack.push("#");    //加入#
+    LL1_Stack.push(vn_set[1].left);   //加入首个非终结符
+    string::iterator p = Next_LL1.begin();
+    while (p != Next_LL1.end())
+    {
+        string X = LL1_Stack.top();   //取栈顶元素
+        if (vt.find(X) != vt.end())    //X为终结符
+        {
+            if (string(1, *p) == X) //匹配成功
+            {
+                p++;
+                LL1_Stack.pop();    //指针后移，且栈顶元素出栈
+                continue;
+            }
+            else                       //栈顶终结符与指针终结符不同，报错
+            {
+                cout << "ERROR!" << endl;
+                return;
+            }
+        }
+        else if (X == "#")          
+        {
+            if (string(1, *p) == X)  //栈顶及指针均为#，成功
+            {
+                cout << "YES" << endl;
+                break;
+            }
+            else
+            {
+                cout << "ERROR!" << endl;
+                return;
+            }
+        }
+        else if (table[X][*p]!="")   //X为非终结符，找表格
+        {
+            LL1_Stack.pop();    
+            String_trennen(table[X][*p]);  //表格内产生式右侧进栈
+            continue;
+        }
+        else if (table[X][*p] == "")
+        {
+            cout << "ERROR!" << endl;
+            return;
+        }
+    }
+}
 int main()
 {
     cout << "==========================================" << endl;
@@ -483,6 +567,7 @@ int main()
         createFirst();
         createFollow();
         createTable();
+        LL1_analysieren();
     }
     return 0;
 }

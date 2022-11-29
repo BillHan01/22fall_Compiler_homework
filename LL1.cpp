@@ -5,8 +5,10 @@
 #include <set>
 #include <vector>
 #include <map>
-#include<stack>
-#include<algorithm>
+#include <stack>
+#include <algorithm>
+#include <iomanip>
+
 using namespace std;
 
 /*产生式类*/
@@ -67,24 +69,33 @@ void Production::Output()
 /*定义全局变量*/
 vector<Production> vn_set;         //产生式（非终结符）集合
 map<string, int> vn_dic;           //非终结符索引
-map<string, set<char>> first;     //firsr集合
+map<string, set<char>> first;     //first集合
 map<string, set<char>> follow;    //follow集合
-set<string> vt;
 int vn_is_visited[MAX_VALUE] = { 0 };
+//vector<map<char, string>> table;  //LL(1)分析表
 map<string, map<char, string>> table;  //LL(1)分析表
+//vector<char> letter;        //存储终结符
 vector<char> vt_set;              //终结符集合
+string start;                  //文法的开始符号
+set<string> vt;
 stack<string> LL1_Stack;
-
 
 /*每次分析前，清空所有容器中的变量*/
 void cleanData()
 {
-   
     vn_set.clear();
     vn_dic.clear();
     first.clear();
     follow.clear();
     memset(vn_is_visited, 0, sizeof(vn_is_visited));
+    table.clear();
+    vt_set.clear();
+    start.clear();
+    vt.clear();
+    while (!LL1_Stack.empty())
+    {
+        LL1_Stack.pop();
+    }
 }
 
 /*初始化visit标志数组*/
@@ -102,8 +113,8 @@ void initVisit(vector<Production>& vn_set)
 /*深度优先遍历构造FIRST*/
 void DFS(int i)
 {
-    if (vn_is_visited[i] == 1)   //已经访问 
-        return;
+    if (vn_is_visited[i] == 1)   
+        return;      //当前非终结符已经访问 
     vn_is_visited[i] = 1;
 
     string& left = vn_set[i].left;
@@ -119,14 +130,14 @@ void DFS(int i)
             }
             if (isupper(iter->at(j)))  //若当前指向非终结符
             {
-                int k;
+                int index;
                 if (j != iter->length() - 1 && iter->at(j + 1) == '\'')  //考虑非终结符形式为 P'
-                    k = vn_dic[iter->substr(j, 2)] - 1;
+                    index = vn_dic[iter->substr(j, 2)] - 1;
                 else
-                    k = vn_dic[iter->substr(j, 1)] - 1;
-                string& left_t = vn_set[k].left;
+                    index = vn_dic[iter->substr(j, 1)] - 1;
+                string& left_t = vn_set[index].left;
 
-                DFS(k);
+                DFS(index);   //递归
 
                 set<char>& tmp = first[left_t];
                 set<char>::iterator iter_1 = tmp.begin();
@@ -145,12 +156,15 @@ void DFS(int i)
         }
 }
 
-/*构造并输出FIRST集合功能函数*/
+/*构造FIRST集合*/
 void createFirst()
 {
     for (int i = 0; i < vn_set.size(); i++)
         DFS(i);
-
+}
+/*打印FIRST集合*/
+void printFirst()
+{
     cout << endl;
     cout << "******************** FIRST set ********************" << endl;
     map<string, set<char>>::iterator iter = first.begin();
@@ -182,12 +196,13 @@ void append(const string& str1, const string& str2)
         s2.insert(*iter);
 }
 
-/*构造并输出FOLLOW集合功能函数*/
+/*构造FOLLOW集合*/
 void createFollow()
 {
+    follow[start].insert('#');  //往文法开始符号的FOLLOW集中加'#'
     while (1)
     {
-        int goon = 0;
+        int stopTag = 0;  //终止循环遍历标志
         for (int i = 0; i < vn_set.size(); i++)
         {
             string& left = vn_set[i].left;
@@ -201,18 +216,18 @@ void createFollow()
                 {
                     if (str[j] == '\'')
                     {
+                        //若为P'非终结符
                         int index = vn_dic[iter->substr(j - 1, 2)] - 1;
                         if (flag == 1)
                         {
-                            int tt = follow[iter->substr(j - 1, 2)].size();
+                            int fsize_before = follow[iter->substr(j - 1, 2)].size();
                             append(left, iter->substr(j - 1, 2));
-                            int tt1 = follow[iter->substr(j - 1, 2)].size();
-                            if (tt1 > tt) 
-                                goon = true;
+                            int fsize_after = follow[iter->substr(j - 1, 2)].size();
+                            if (fsize_after > fsize_before) 
+                                stopTag = 1;       //FOLLOW发生了变化，需要继续循环遍历
                             if (!vn_set[index].right.count("~"))
                                 flag = false;
                         }
-
                         
                         for (int k = j + 1; k < iter->length(); k++)
                         {
@@ -221,7 +236,8 @@ void createFollow()
                                 string id;
                                 if (k != iter->length() - 1 && str[k + 1] == '\'')
                                     id = iter->substr(k, 2);
-                                else id = iter->substr(k, 1);
+                                else 
+                                    id = iter->substr(k, 1);
                                 set<char>& from = first[id];
                                 set<char>& to = follow[iter->substr(j - 1, 2)];
                                 int tt = to.size();
@@ -230,7 +246,7 @@ void createFollow()
                                     if (*it1 != '~')
                                         to.insert(*it1);
                                 int tt1 = follow[iter->substr(j - 1, 2)].size();
-                                if (tt1 > tt) goon = true;
+                                if (tt1 > tt) stopTag = true;
                                 if (!vn_set[vn_dic[id] - 1].right.count("~"))
                                     break;
                             }
@@ -240,10 +256,11 @@ void createFollow()
                                 follow[iter->substr(j - 1, 2)].insert(str[k]);
                                 int tt1 = follow[iter->substr(j - 1, 2)].size();
                                 if (tt1 > tt)
-                                    goon = true;
+                                    stopTag = true;
                                 break;
                             }
-                            else continue;
+                            else 
+                                continue;
                         }
                         j--;
                     }
@@ -258,7 +275,7 @@ void createFollow()
                                 flag = false;
                             int tt1 = follow[iter->substr(j, 1)].size();
                             if (tt1 > tt) 
-                                goon = true;
+                                stopTag = true;
                         }
                         for (int k = j + 1; k < iter->length(); k++)
                         {
@@ -276,7 +293,7 @@ void createFollow()
                                     if (*it1 != '~')
                                         to.insert(*it1);
                                 int tt1 = follow[iter->substr(j, 1)].size();
-                                if (tt1 > tt) goon = true;
+                                if (tt1 > tt) stopTag = true;
                                 if (!vn_set[vn_dic[id] - 1].right.count("~"))
                                     break;
                             }
@@ -286,20 +303,25 @@ void createFollow()
                                 follow[iter->substr(j, 1)].insert(str[k]);
                                 int tt1 = follow[iter->substr(j, 1)].size();
                                 if (tt1 > tt) 
-                                    goon = true;
+                                    stopTag = true;
                                 break;
                             }
-                            else continue;
+                            else 
+                                continue;
                         }
                     }
                     else flag = false;
                 }
             }
         }
-        if (goon == 0)
+        if (stopTag == 0)
             break;
     }
+}
 
+/*打印FOLLOW集合*/
+void printFollow()
+{
     cout << endl;
     cout << "******************** FOLLOW set ********************" << endl;
     map<string, set<char> >::iterator iter = follow.begin();
@@ -307,7 +329,7 @@ void createFollow()
     {
         cout << "FOLLOW(" << iter->first.c_str() << ")={ ";
         set<char>& tmp = iter->second;
-        tmp.insert('#');
+        //tmp.insert('#');
         set<char>::iterator iter_t = tmp.begin();
         bool flag = false;
         for (; iter_t != tmp.end(); iter_t++)
@@ -414,14 +436,12 @@ void createTable()
                 //cout << *it << " " <<  vt_set[j] << endl;
                 if (belongToFirst(vt_set[j], *it))
                     tmp[vt_set[j]] = *it;             //对 P->α，若a属于FIRST(α)，则置[P,a]为α
-
-                if (it->at(0) == '~' && belongToFollow(vt_set[j], left))
+                
+                if (it->at(0) == '~' && belongToFollow(vt_set[j],left))
                     tmp[vt_set[j]] = *it;        //若b属于FOLLOW(P)，置[P,b]为空字
             }
-        
-            //table.push_back(tmp);
-            table[vn_set[i].left] = tmp;  //完成该非终结符对应行的构造
-
+        //table.push_back(tmp);
+        table[vn_set[i].left] = tmp;  //完成该非终结符对应行的构造
     }
 
     /*打印LL(1)分析表*/
@@ -442,10 +462,9 @@ void createTable()
         printf("|%5s%4s", vn_set[i].left.c_str(), "|");
         for (int j = 0; j < vt_set.size(); j++)
         {
-
             //if (table[i].count(vt_set[j]))
               //  printf("%7s%3s", table[i][vt_set[j]].c_str(), "|");
-            if (table[vn_set[i].left].count(vt_set[j]))
+            if(table[vn_set[i].left].count(vt_set[j]))
                 printf("%7s%3s", table[vn_set[i].left][vt_set[j]].c_str(), "|");
             else
                 cout << "         |";
@@ -458,25 +477,26 @@ void createTable()
     cout << endl;
 }
 
-/*对产生式右边进行处理*/
-void String_trennen(string vn)
+
+/*把产生式右边拆分成单个符号*/
+void splitProduction(string vn)
 {
-    string new_vn(vn.rbegin(), vn.rend());   //倒序判断
+    string new_vn(vn.rbegin(), vn.rend());   //需要倒序入栈
     string::iterator p = new_vn.begin();
-    
+
     while (p != new_vn.end())
     {
-        if (*p  == '\'')     //特判'的情况
+        if (*p == '\'')     //特判'的情况
         {
             string temp(1, *(p + 1));
             temp += *(p);
-            LL1_Stack.push(temp);
+            LL1_Stack.push(temp);   
             p += 2;
             continue;
         }
         else
         {
-            string temp(1, *p);
+            string temp(1, *p);       
             LL1_Stack.push(temp);
             p++;
             continue;
@@ -485,40 +505,57 @@ void String_trennen(string vn)
     return;
 }
 
+/*构造vt集合*/
 void vt_initialisieren()
 {
     for (int i = 0; i < vt_set.size(); i++)
     {
-        vt.insert(string(1, vt_set[i]));
+        vt.insert(string(1, vt_set[i]));   
     }
 }
 
-void Stack_Output()
+/*栈的输出*/
+void outputStack(string& X,string::iterator p)
 {
     stack<string> LL1_copy = LL1_Stack;
+    int size = 0;
     stack<string> LL1_Output;
     while (!LL1_copy.empty())
     {
         LL1_Output.push(LL1_copy.top());
         LL1_copy.pop();
+        
     }
     while (!LL1_Output.empty())
     {
         cout << LL1_Output.top();
+        size += LL1_Output.top().size();
         LL1_Output.pop();
     }
+    cout << setiosflags(ios::right) << setw(30 - size) << "";
+    int length_Ausdruck = 0;
+    char p_value = *p;
+    while (*p != '\0')
+    {
+        cout << *p;
+        length_Ausdruck++;
+        p++;
+    }
+    cout << setiosflags(ios::left) << setw(30 - length_Ausdruck) << "";
+    if(table[X][p_value]!="")
+        cout << X << "->" << table[X][p_value];
     cout << endl;
     return;
 }
 
-
 //输入LL(1)文法进行语法分析
-void LL1_analysieren()    
+void analyseLL1()
 {
-    cout << "请输入LL(1)文法：" << endl;
+    cout << "请输入要分析的句子：" << endl;
     string Next_LL1;    //即将输入的LL(1)文法
-
     cin >> Next_LL1;
+    cout << endl << setiosflags(ios::left) << setw(30) << "栈"
+        << setiosflags(ios::left) << setw(30) << "输入" << "产生式" << endl << endl;        
     Next_LL1 += "#";        //添加#
     Next_LL1 += '\0';
     LL1_Stack.push("#");    //加入#
@@ -534,7 +571,7 @@ void LL1_analysieren()
             {
                 p++;
                 LL1_Stack.pop();    //指针后移，且栈顶元素出栈
-                Stack_Output();
+                outputStack(X, p);
                 continue;
             }
             else                       //栈顶终结符与指针终结符不同，报错
@@ -543,33 +580,36 @@ void LL1_analysieren()
                 return;
             }
         }
-        else if (X == "#")          
+        else if (X == "#")
         {
-            if (string(1, *p) == X)  //栈顶及指针均为#，成功
+            if (string(1, *p) == X)  //栈顶及指针均为#，匹配成功
             {
-                cout << "YES" << endl;
+                cout << "Erfolg!" << endl;
                 break;
             }
-            else
+            else                    //指针指向#，栈顶不是#，报错
             {
                 cout << "ERROR!" << endl;
                 return;
             }
         }
-        else if (table[X][*p]!="")   //X为非终结符，找表格
+        else if (table[X][*p] != "")   //X为非终结符，找表格
         {
             if (table[X][*p] == "~") //空字特判
             {
-                LL1_Stack.pop();
-                Stack_Output();
+                LL1_Stack.pop();        //直接出栈
+                outputStack(X,p);       //打表
                 continue;
             }
-            LL1_Stack.pop();    
-            String_trennen(table[X][*p]);  //表格内产生式右侧进栈
-            Stack_Output();
-            continue;
-        }     
-        else if (table[X][*p] == "")
+            else                     //不为空字情况
+            {
+                LL1_Stack.pop();
+                splitProduction(table[X][*p]);  //表格内产生式右侧进栈
+                outputStack(X, p);               //打表
+                continue;
+            }
+        }
+        else if (table[X][*p] == "")           //表格为空，报错
         {
             cout << "ERROR!" << endl;
             return;
@@ -578,17 +618,18 @@ void LL1_analysieren()
     return;
 }
 
+
 int main()
 {
-    cout << "==========================================" << endl;
-    cout << "==== 同济大学2022年秋编译原理课程作业 ====" << endl;
-    cout << "====        LL(1)语法分析程序         ====" << endl;
-    cout << "====            Welcome!              ====" << endl;
-    cout << "==========================================" << endl;
-    cout << endl;
-
     while (1)
     {
+        system("cls");
+        cout << "==========================================" << endl;
+        cout << "==== 同济大学2022年秋编译原理课程作业 ====" << endl;
+        cout << "====        LL(1)语法分析程序         ====" << endl;
+        cout << "====            Welcome!              ====" << endl;
+        cout << "==========================================" << endl;
+        cout << endl;
         cleanData();
         int n;
         cout << "请输入LL(1)文法产生式的数量（输入非正数退出程序）：";
@@ -602,13 +643,28 @@ int main()
             cin >> str;
             Production pro(str);
             vn_set.push_back(pro);
+            if (i == 0)
+                start = pro.left;   //默认第一个输入的产生式左部为文法开始符号
         }
         initVisit(vn_set);
         createFirst();
+        printFirst();
         createFollow();
+        printFollow();
         createTable();
-        LL1_analysieren();
+        analyseLL1();
+        system("pause");
+
     }
     return 0;
 }
 
+/*
+测试案例1：
+5
+E->TE'
+E'->+TE'|~
+T->FT'
+T'->*FT'|~
+F->(E)|i
+*/

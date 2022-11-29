@@ -77,6 +77,7 @@ vector<char> vt_set;              //终结符集合
 string start;                  //文法的开始符号
 set<string> vt;
 stack<string> LL1_Stack;
+int Output_Zahl = 0;   //打表次数
 
 /*每次分析前，清空所有容器中的变量*/
 void cleanData()
@@ -90,6 +91,7 @@ void cleanData()
     vt_set.clear();
     start.clear();
     vt.clear();
+    Output_Zahl = 0;
     while (!LL1_Stack.empty())
     {
         LL1_Stack.pop();
@@ -515,6 +517,9 @@ void outputStack(string& X, string::iterator p)
     stack<string> LL1_copy = LL1_Stack;
     int size = 0;
     stack<string> LL1_Output;
+    cout <<  setw(2) << Output_Zahl;
+    cout << " ";
+    Output_Zahl++;
     while (!LL1_copy.empty())
     {
         LL1_Output.push(LL1_copy.top());
@@ -527,7 +532,7 @@ void outputStack(string& X, string::iterator p)
         size += LL1_Output.top().size();
         LL1_Output.pop();
     }
-    cout << setiosflags(ios::right) << setw(30 - size) << "";
+    cout  << setw(30 - size) << "" ;
     int length_Ausdruck = 0;
     char p_value = *p;
     while (*p != '\0')
@@ -536,7 +541,7 @@ void outputStack(string& X, string::iterator p)
         length_Ausdruck++;
         p++;
     }
-    cout << setiosflags(ios::left) << setw(30 - length_Ausdruck) << "";
+    cout << setw(30 - length_Ausdruck) << "";
     if (table[X][p_value] != "")
         cout << X << "->" << table[X][p_value];
     cout << endl;
@@ -549,17 +554,18 @@ void analyseLL1()
     cout << "请输入要分析的句子：" << endl;
     string Next_LL1;    //即将输入的LL(1)文法
     cin >> Next_LL1;
-    cout << endl << setiosflags(ios::left) << setw(30) << "栈"
-        << setiosflags(ios::left) << setw(30) << "输入" << "产生式" << endl << endl;
+    cout << endl << setw(5) << "栈" << setw(32) << "输入" << setw(32) << "产生式" << endl << endl;
     Next_LL1 += "#";        //添加#
     Next_LL1 += '\0';
     LL1_Stack.push("#");    //加入#
     LL1_Stack.push(vn_set[0].left);   //加入首个非终结符
     vt_initialisieren();
     string::iterator p = Next_LL1.begin();
+    string X;
+    outputStack(X, p);
     while (p != Next_LL1.end())
     {
-        string X = LL1_Stack.top();   //取栈顶元素
+        X = LL1_Stack.top();   //取栈顶元素
         if (vt.find(X) != vt.end() && X != "#")    //X为终结符且不为#
         {
             if (string(1, *p) == X) //匹配成功

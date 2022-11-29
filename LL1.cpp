@@ -52,7 +52,7 @@ Production::Production(string str)
     }
     right.insert(tmp);
 }
-void Production::Output()  
+void Production::Output()
 {
     cout << left << "->";
     set<string>::iterator iter = right.begin();
@@ -113,14 +113,14 @@ void initVisit(vector<Production>& vn_set)
 /*深度优先遍历构造FIRST*/
 void DFS(int i)
 {
-    if (vn_is_visited[i] == 1)   
+    if (vn_is_visited[i] == 1)
         return;      //当前非终结符已经访问 
     vn_is_visited[i] = 1;
 
     string& left = vn_set[i].left;
     set<string>& right = vn_set[i].right;
     set<string>::iterator iter = right.begin();
-    for(;iter != right.end();iter++)
+    for (; iter != right.end(); iter++)
         for (int j = 0; j < iter->length(); j++)
         {
             if (!isupper(iter->at(j)) && iter->at(j) != '\'') //若当前不指向非终结符
@@ -144,7 +144,7 @@ void DFS(int i)
                 bool flag = true;
                 for (; iter_1 != tmp.end(); iter_1++)
                 {
-                    if (*iter_1 == '~') 
+                    if (*iter_1 == '~')
                         flag = false;
                     first[left].insert(*iter_1);
                 }
@@ -223,12 +223,12 @@ void createFollow()
                             int fsize_before = follow[iter->substr(j - 1, 2)].size();
                             append(left, iter->substr(j - 1, 2));
                             int fsize_after = follow[iter->substr(j - 1, 2)].size();
-                            if (fsize_after > fsize_before) 
+                            if (fsize_after > fsize_before)
                                 stopTag = 1;       //FOLLOW发生了变化，需要继续循环遍历
                             if (!vn_set[index].right.count("~"))
                                 flag = false;
                         }
-                        
+
                         for (int k = j + 1; k < iter->length(); k++)
                         {
                             if (isupper(str[k]))
@@ -236,7 +236,7 @@ void createFollow()
                                 string id;
                                 if (k != iter->length() - 1 && str[k + 1] == '\'')
                                     id = iter->substr(k, 2);
-                                else 
+                                else
                                     id = iter->substr(k, 1);
                                 set<char>& from = first[id];
                                 set<char>& to = follow[iter->substr(j - 1, 2)];
@@ -259,7 +259,7 @@ void createFollow()
                                     stopTag = true;
                                 break;
                             }
-                            else 
+                            else
                                 continue;
                         }
                         j--;
@@ -274,7 +274,7 @@ void createFollow()
                             if (!vn_set[x].right.count("~"))
                                 flag = false;
                             int tt1 = follow[iter->substr(j, 1)].size();
-                            if (tt1 > tt) 
+                            if (tt1 > tt)
                                 stopTag = true;
                         }
                         for (int k = j + 1; k < iter->length(); k++)
@@ -302,11 +302,11 @@ void createFollow()
                                 int tt = follow[iter->substr(j, 1)].size();
                                 follow[iter->substr(j, 1)].insert(str[k]);
                                 int tt1 = follow[iter->substr(j, 1)].size();
-                                if (tt1 > tt) 
+                                if (tt1 > tt)
                                     stopTag = true;
                                 break;
                             }
-                            else 
+                            else
                                 continue;
                         }
                     }
@@ -398,7 +398,7 @@ void createTable()
     map<char, string> tmp; //单个非终结符对应的一行表
 
     /*构造终结符集合vn_set*/
-    bool is_visited[1001] = {};  
+    bool is_visited[1001] = {};
     for (int i = 0; i < vn_set.size(); i++)
     {
         set<string>& right = vn_set[i].right;
@@ -412,14 +412,14 @@ void createTable()
                     is_visited[iter->at(j)] = true;
                     vt_set.push_back(iter->at(j));  //加入终结符集合
                 }
-                /*
-                if (!isupper(iter->at(j)) && iter->at(j) != '\'')
-                {
-                    if (is_visited[iter->at(j)]) 
-                        continue;
-                    is_visited[iter->at(j)] = true;
-                    vt_set.push_back(iter->at(j));
-                }*/
+        /*
+        if (!isupper(iter->at(j)) && iter->at(j) != '\'')
+        {
+            if (is_visited[iter->at(j)])
+                continue;
+            is_visited[iter->at(j)] = true;
+            vt_set.push_back(iter->at(j));
+        }*/
     }
     vt_set.push_back('#');  //把结束标志#加到终结符集合中
 
@@ -436,8 +436,8 @@ void createTable()
                 //cout << *it << " " <<  vt_set[j] << endl;
                 if (belongToFirst(vt_set[j], *it))
                     tmp[vt_set[j]] = *it;             //对 P->α，若a属于FIRST(α)，则置[P,a]为α
-                
-                if (it->at(0) == '~' && belongToFollow(vt_set[j],left))
+
+                if (it->at(0) == '~' && belongToFollow(vt_set[j], left))
                     tmp[vt_set[j]] = *it;        //若b属于FOLLOW(P)，置[P,b]为空字
             }
         //table.push_back(tmp);
@@ -464,7 +464,7 @@ void createTable()
         {
             //if (table[i].count(vt_set[j]))
               //  printf("%7s%3s", table[i][vt_set[j]].c_str(), "|");
-            if(table[vn_set[i].left].count(vt_set[j]))
+            if (table[vn_set[i].left].count(vt_set[j]))
                 printf("%7s%3s", table[vn_set[i].left][vt_set[j]].c_str(), "|");
             else
                 cout << "         |";
@@ -490,13 +490,13 @@ void splitProduction(string vn)
         {
             string temp(1, *(p + 1));
             temp += *(p);
-            LL1_Stack.push(temp);   
+            LL1_Stack.push(temp);
             p += 2;
             continue;
         }
         else
         {
-            string temp(1, *p);       
+            string temp(1, *p);
             LL1_Stack.push(temp);
             p++;
             continue;
@@ -510,12 +510,12 @@ void vt_initialisieren()
 {
     for (int i = 0; i < vt_set.size(); i++)
     {
-        vt.insert(string(1, vt_set[i]));   
+        vt.insert(string(1, vt_set[i]));
     }
 }
 
 /*栈的输出*/
-void outputStack(string& X,string::iterator p)
+void outputStack(string& X, string::iterator p)
 {
     stack<string> LL1_copy = LL1_Stack;
     int size = 0;
@@ -524,7 +524,7 @@ void outputStack(string& X,string::iterator p)
     {
         LL1_Output.push(LL1_copy.top());
         LL1_copy.pop();
-        
+
     }
     while (!LL1_Output.empty())
     {
@@ -542,7 +542,7 @@ void outputStack(string& X,string::iterator p)
         p++;
     }
     cout << setiosflags(ios::left) << setw(30 - length_Ausdruck) << "";
-    if(table[X][p_value]!="")
+    if (table[X][p_value] != "")
         cout << X << "->" << table[X][p_value];
     cout << endl;
     return;
@@ -555,7 +555,7 @@ void analyseLL1()
     string Next_LL1;    //即将输入的LL(1)文法
     cin >> Next_LL1;
     cout << endl << setiosflags(ios::left) << setw(30) << "栈"
-        << setiosflags(ios::left) << setw(30) << "输入" << "产生式" << endl << endl;        
+        << setiosflags(ios::left) << setw(30) << "输入" << "产生式" << endl << endl;
     Next_LL1 += "#";        //添加#
     Next_LL1 += '\0';
     LL1_Stack.push("#");    //加入#
@@ -598,7 +598,7 @@ void analyseLL1()
             if (table[X][*p] == "~") //空字特判
             {
                 LL1_Stack.pop();        //直接出栈
-                outputStack(X,p);       //打表
+                outputStack(X, p);       //打表
                 continue;
             }
             else                     //不为空字情况

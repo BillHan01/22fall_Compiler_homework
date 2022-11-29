@@ -7,6 +7,7 @@
 #include <map>
 #include <stack>
 #include <algorithm>
+#include <iomanip>
 
 using namespace std;
 
@@ -71,9 +72,7 @@ map<string, int> vn_dic;           //非终结符索引
 map<string, set<char>> first;     //first集合
 map<string, set<char>> follow;    //follow集合
 int vn_is_visited[MAX_VALUE] = { 0 };
-//vector<map<char, string>> table;  //LL(1)分析表
 map<string, map<char, string>> table;  //LL(1)分析表
-//vector<char> letter;        //存储终结符
 vector<char> vt_set;              //终结符集合
 string start;                  //文法的开始符号
 set<string> vt;
@@ -90,6 +89,11 @@ void cleanData()
     table.clear();
     vt_set.clear();
     start.clear();
+    vt.clear();
+    while (!LL1_Stack.empty())
+    {
+        LL1_Stack.pop();
+    }
 }
 
 /*初始化visit标志数组*/
@@ -312,7 +316,7 @@ void createFollow()
                         }
                     }
                     else
-                        flag = false; //当前为终结符
+                        flag = 0; //当前为终结符
                 }
             }
         }
@@ -414,14 +418,6 @@ void createTable()
                     is_visited[iter->at(j)] = true;
                     vt_set.push_back(iter->at(j));  //加入终结符集合
                 }
-        /*
-        if (!isupper(iter->at(j)) && iter->at(j) != '\'')
-        {
-            if (is_visited[iter->at(j)])
-                continue;
-            is_visited[iter->at(j)] = true;
-            vt_set.push_back(iter->at(j));
-        }*/
     }
     vt_set.push_back('#');  //把结束标志#加到终结符集合中
 
@@ -442,7 +438,6 @@ void createTable()
                 if (it->at(0) == '~' && belongToFollow(vt_set[j], left))
                     tmp[vt_set[j]] = *it;        //若b属于FOLLOW(P)，置[P,b]为空字
             }
-        //table.push_back(tmp);
         table[vn_set[i].left] = tmp;  //完成该非终结符对应行的构造
     }
 
@@ -464,8 +459,6 @@ void createTable()
         printf("|%5s%4s", vn_set[i].left.c_str(), "|");
         for (int j = 0; j < vt_set.size(); j++)
         {
-            //if (table[i].count(vt_set[j]))
-              //  printf("%7s%3s", table[i][vt_set[j]].c_str(), "|");
             if (table[vn_set[i].left].count(vt_set[j]))
                 printf("%7s%3s", table[vn_set[i].left][vt_set[j]].c_str(), "|");
             else
@@ -483,7 +476,7 @@ void createTable()
 /*把产生式右边拆分成单个符号*/
 void splitProduction(string vn)
 {
-    string new_vn(vn.rbegin(), vn.rend());   //倒序判断
+    string new_vn(vn.rbegin(), vn.rend());   //需要倒序入栈
     string::iterator p = new_vn.begin();
 
     while (p != new_vn.end())
@@ -517,20 +510,35 @@ void vt_initialisieren()
 }
 
 /*栈的输出*/
-void outputStack()
+void outputStack(string& X, string::iterator p)
 {
     stack<string> LL1_copy = LL1_Stack;
+    int size = 0;
     stack<string> LL1_Output;
     while (!LL1_copy.empty())
     {
         LL1_Output.push(LL1_copy.top());
         LL1_copy.pop();
+
     }
     while (!LL1_Output.empty())
     {
         cout << LL1_Output.top();
+        size += LL1_Output.top().size();
         LL1_Output.pop();
     }
+    cout << setiosflags(ios::right) << setw(30 - size) << "";
+    int length_Ausdruck = 0;
+    char p_value = *p;
+    while (*p != '\0')
+    {
+        cout << *p;
+        length_Ausdruck++;
+        p++;
+    }
+    cout << setiosflags(ios::left) << setw(30 - length_Ausdruck) << "";
+    if (table[X][p_value] != "")
+        cout << X << "->" << table[X][p_value];
     cout << endl;
     return;
 }
@@ -540,8 +548,9 @@ void analyseLL1()
 {
     cout << "请输入要分析的句子：" << endl;
     string Next_LL1;    //即将输入的LL(1)文法
-
     cin >> Next_LL1;
+    cout << endl << setiosflags(ios::left) << setw(30) << "栈"
+        << setiosflags(ios::left) << setw(30) << "输入" << "产生式" << endl << endl;
     Next_LL1 += "#";        //添加#
     Next_LL1 += '\0';
     LL1_Stack.push("#");    //加入#
@@ -557,7 +566,7 @@ void analyseLL1()
             {
                 p++;
                 LL1_Stack.pop();    //指针后移，且栈顶元素出栈
-                outputStack();
+                outputStack(X, p);
                 continue;
             }
             else                       //栈顶终结符与指针终结符不同，报错
@@ -568,12 +577,12 @@ void analyseLL1()
         }
         else if (X == "#")
         {
-            if (string(1, *p) == X)  //栈顶及指针均为#，成功
+            if (string(1, *p) == X)  //栈顶及指针均为#，匹配成功
             {
-                cout << "YES" << endl;
+                cout << "Erfolg!" << endl;
                 break;
             }
-            else
+            else                    //指针指向#，栈顶不是#，报错
             {
                 cout << "ERROR!" << endl;
                 return;
@@ -583,16 +592,19 @@ void analyseLL1()
         {
             if (table[X][*p] == "~") //空字特判
             {
-                LL1_Stack.pop();
-                outputStack();
+                LL1_Stack.pop();        //直接出栈
+                outputStack(X, p);       //打表
                 continue;
             }
-            LL1_Stack.pop();
-            splitProduction(table[X][*p]);  //表格内产生式右侧进栈
-            outputStack();
-            continue;
+            else                     //不为空字情况
+            {
+                LL1_Stack.pop();
+                splitProduction(table[X][*p]);  //表格内产生式右侧进栈
+                outputStack(X, p);               //打表
+                continue;
+            }
         }
-        else if (table[X][*p] == "")
+        else if (table[X][*p] == "")           //表格为空，报错
         {
             cout << "ERROR!" << endl;
             return;
@@ -604,15 +616,15 @@ void analyseLL1()
 
 int main()
 {
-    cout << "==========================================" << endl;
-    cout << "==== 同济大学2022年秋编译原理课程作业 ====" << endl;
-    cout << "====        LL(1)语法分析程序         ====" << endl;
-    cout << "====            Welcome!              ====" << endl;
-    cout << "==========================================" << endl;
-    cout << endl;
-
     while (1)
     {
+        system("cls");
+        cout << "==========================================" << endl;
+        cout << "==== 同济大学2022年秋编译原理课程作业 ====" << endl;
+        cout << "====        LL(1)语法分析程序         ====" << endl;
+        cout << "====            Welcome!              ====" << endl;
+        cout << "==========================================" << endl;
+        cout << endl;
         cleanData();
         int n;
         cout << "请输入LL(1)文法产生式的数量（输入非正数退出程序）：";
@@ -636,6 +648,8 @@ int main()
         printFollow();
         createTable();
         analyseLL1();
+        system("pause");
+
     }
     return 0;
 }

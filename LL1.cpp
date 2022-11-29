@@ -72,9 +72,7 @@ map<string, int> vn_dic;           //非终结符索引
 map<string, set<char>> first;     //first集合
 map<string, set<char>> follow;    //follow集合
 int vn_is_visited[MAX_VALUE] = { 0 };
-//vector<map<char, string>> table;  //LL(1)分析表
 map<string, map<char, string>> table;  //LL(1)分析表
-//vector<char> letter;        //存储终结符
 vector<char> vt_set;              //终结符集合
 string start;                  //文法的开始符号
 set<string> vt;
@@ -412,14 +410,6 @@ void createTable()
                     is_visited[iter->at(j)] = true;
                     vt_set.push_back(iter->at(j));  //加入终结符集合
                 }
-        /*
-        if (!isupper(iter->at(j)) && iter->at(j) != '\'')
-        {
-            if (is_visited[iter->at(j)])
-                continue;
-            is_visited[iter->at(j)] = true;
-            vt_set.push_back(iter->at(j));
-        }*/
     }
     vt_set.push_back('#');  //把结束标志#加到终结符集合中
 
@@ -440,7 +430,6 @@ void createTable()
                 if (it->at(0) == '~' && belongToFollow(vt_set[j], left))
                     tmp[vt_set[j]] = *it;        //若b属于FOLLOW(P)，置[P,b]为空字
             }
-        //table.push_back(tmp);
         table[vn_set[i].left] = tmp;  //完成该非终结符对应行的构造
     }
 
@@ -462,8 +451,6 @@ void createTable()
         printf("|%5s%4s", vn_set[i].left.c_str(), "|");
         for (int j = 0; j < vt_set.size(); j++)
         {
-            //if (table[i].count(vt_set[j]))
-              //  printf("%7s%3s", table[i][vt_set[j]].c_str(), "|");
             if (table[vn_set[i].left].count(vt_set[j]))
                 printf("%7s%3s", table[vn_set[i].left][vt_set[j]].c_str(), "|");
             else
